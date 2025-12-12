@@ -120,7 +120,7 @@ services:
       - xpack.monitoring.elasticsearch.password=${LOGSTASH_INTERNAL_PASSWORD}
       - xpack.monitoring.elasticsearch.ssl.certificate_authority=/usr/share/logstash/config/certs/ca/ca.crt
     volumes:
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
       - ./logstash/patterns:/usr/share/logstash/patterns:ro
       - ./logstash/templates:/usr/share/logstash/templates:ro
