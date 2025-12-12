@@ -124,7 +124,7 @@ services:
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
       - ./logstash/patterns:/usr/share/logstash/patterns:ro
       - ./logstash/templates:/usr/share/logstash/templates:ro
-      - ./data:/usr/share/logstash/data:ro
+      - ./data:/usr/share/logstash/data
       - elasticsearch-certs:/usr/share/logstash/config/certs:ro
     ports:
       - "${LOGSTASH_PORT}:9600"
