@@ -1,29 +1,60 @@
 version: '3.8'
 
 services:
-  # Setup service - runs once to initialize users and passwords
+  # Setup service - creates certificates and sets up users
   setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     container_name: elk-setup
     user: "0"
-    command: >
-      bash -c '
-        echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 5; done;
-        echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_SYSTEM_PASSWORD}\"}" | grep -q "^{}"; do sleep 5; done;
-        echo "Setting logstash_internal password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/logstash_internal/_password -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\"}" | grep -q "^{}"; do sleep 5; done;
-        echo "All done!";
-      '
     volumes:
       - elasticsearch-certs:/usr/share/elasticsearch/config/certs
+    command: >
+      bash -c '
+        if [ x${ELASTIC_PASSWORD} == x ]; then
+          echo "Set the ELASTIC_PASSWORD environment variable in the .env file";
+          exit 1;
+        elif [ x${KIBANA_SYSTEM_PASSWORD} == x ]; then
+          echo "Set the KIBANA_SYSTEM_PASSWORD environment variable in the .env file";
+          exit 1;
+        elif [ x${LOGSTASH_INTERNAL_PASSWORD} == x ]; then
+          echo "Set the LOGSTASH_INTERNAL_PASSWORD environment variable in the .env file";
+          exit 1;
+        fi;
+        if [ ! -f config/certs/ca.zip ]; then
+          echo "Creating CA";
+          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+          unzip config/certs/ca.zip -d config/certs;
+        fi;
+        if [ ! -f config/certs/certs.zip ]; then
+          echo "Creating certs";
+          echo -ne \
+          "instances:\n"\
+          "  - name: elasticsearch\n"\
+          "    dns:\n"\
+          "      - elasticsearch\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          > config/certs/instances.yml;
+          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
+          unzip config/certs/certs.zip -d config/certs;
+        fi;
+        echo "Setting file permissions"
+        chown -R root:root config/certs;
+        find . -type d -exec chmod 750 \{\} \;;
+        find . -type f -exec chmod 640 \{\} \;;
+        echo "Waiting for Elasticsearch availability";
+        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_SYSTEM_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "Setting logstash_internal password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/logstash_internal/_password -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "All done!";
+      '
     networks:
       - elk
-    depends_on:
-      - elasticsearch
     healthcheck:
-      test: ["CMD-SHELL", "[ -f config/certs/ca/ca.crt ]"]
+      test: ["CMD-SHELL", "[ -f config/certs/elasticsearch/elasticsearch.crt ]"]
       interval: 1s
       timeout: 5s
       retries: 120
@@ -32,6 +63,9 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     container_name: elk-elasticsearch
+    depends_on:
+      setup:
+        condition: service_healthy
     environment:
       - node.name=elasticsearch
       - cluster.name=${CLUSTER_NAME}
@@ -73,6 +107,9 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     container_name: elk-logstash
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - LOGSTASH_INTERNAL_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
@@ -93,9 +130,6 @@ services:
       - "${LOGSTASH_PORT}:9600"
     networks:
       - elk
-    depends_on:
-      - elasticsearch
-      - setup
     mem_limit: ${LS_MEM_LIMIT}
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9600/_node/stats | grep -q '\"status\":\"green\"' || curl -s http://localhost:9600"]
@@ -107,6 +141,9 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     container_name: elk-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     environment:
       - SERVERNAME=kibana
       - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
@@ -124,9 +161,6 @@ services:
       - "${KIBANA_PORT}:5601"
     networks:
       - elk
-    depends_on:
-      - elasticsearch
-      - setup
     mem_limit: ${KIBANA_MEM_LIMIT}
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"overall\":{\"level\":\"available\"' || curl -s http://localhost:5601/api/status"]
