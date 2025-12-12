@@ -7,7 +7,8 @@ A Docker Compose-based ELK (Elasticsearch, Logstash, Kibana) stack designed spec
 - **Hayabusa Integration**: Pre-configured parsers for Hayabusa CSV and JSON/JSONL output formats
 - **SOF-ELK Inspired Architecture**: Numbered pipeline organization (0000-9999) for predictable processing
 - **Extensible Parsers**: Example parsers for Sysmon, PowerShell, and other forensic log types
-- **Security Enabled**: Elasticsearch 8.x security with authentication and SSL/TLS
+- **Security Enabled**: Elasticsearch 9.x security with authentication and SSL/TLS (compatible with 8.x and 9.x)
+- **Basic License (Free)**: Includes all essential features for forensic analysis - see [LICENSING.md](LICENSING.md)
 - **GeoIP Enrichment**: Automatic geographic data enrichment for IP addresses
 - **MITRE ATT&CK Mapping**: Built-in support for MITRE tactics and techniques from Hayabusa
 - **Daily Indices**: Time-based index rotation for easier data management
@@ -144,6 +145,18 @@ Place log files in the appropriate directories:
    - **RuleTitle**: Hayabusa detection rule titles
    - **Computer**: Hostname/computer name
    - **MitreTactics**: MITRE ATT&CK tactics
+
+## Licensing
+
+This stack uses the **Elastic Basic License** (free, includes all essential features for forensic analysis).
+
+To change the license type, edit [.env](.env:18):
+```bash
+LICENSE_TYPE=basic    # Free forever (default)
+LICENSE_TYPE=trial    # 30-day trial with all features
+```
+
+For detailed information about features, paid options, and license comparison, see [LICENSING.md](LICENSING.md).
 
 ## Directory Structure
 

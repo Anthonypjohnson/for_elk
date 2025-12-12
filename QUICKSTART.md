@@ -2,13 +2,19 @@
 
 ## 1. First Time Setup
 
-### Change Passwords
-Edit `.env` and change these passwords:
+### Configure Settings
+Edit `.env` and configure:
 ```bash
+# Passwords
 ELASTIC_PASSWORD=your_secure_password
 KIBANA_SYSTEM_PASSWORD=your_secure_password
 LOGSTASH_INTERNAL_PASSWORD=your_secure_password
+
+# License (optional - defaults to basic/free)
+LICENSE_TYPE=basic    # or 'trial' for 30-day all features
 ```
+
+See [LICENSING.md](LICENSING.md) for license options.
 
 ### Increase Virtual Memory (macOS)
 ```bash

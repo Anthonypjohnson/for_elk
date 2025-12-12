@@ -5,9 +5,9 @@ server.host: "0.0.0.0"
 server.port: 5601
 
 # Elasticsearch connection
+# Note: Password is set via ELASTICSEARCH_PASSWORD environment variable in docker-compose.yml
 elasticsearch.hosts: ["https://elasticsearch:9200"]
 elasticsearch.username: "kibana_system"
-elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}"
 
 # SSL configuration for Elasticsearch connection
 elasticsearch.ssl.certificateAuthorities: ["config/certs/ca/ca.crt"]

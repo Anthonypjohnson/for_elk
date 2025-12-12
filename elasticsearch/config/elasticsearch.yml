@@ -13,7 +13,7 @@ path.logs: /usr/share/elasticsearch/logs
 # Memory configuration
 bootstrap.memory_lock: true
 
-# Security (required for Elasticsearch 8.x+)
+# Security (required for Elasticsearch 8.x+ and 9.x)
 xpack.security.enabled: true
 xpack.security.enrollment.enabled: true
 
@@ -37,6 +37,8 @@ xpack.security.transport.ssl:
 xpack.monitoring.collection.enabled: true
 
 # License type
+# Note: This is overridden by LICENSE_TYPE environment variable in docker-compose.yml
+# Options: basic (default, free), trial (30-day all features), platinum, enterprise, gold
 xpack.license.self_generated.type: basic
 
 # Discovery configuration (single-node)
