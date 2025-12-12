@@ -47,8 +47,8 @@ services:
         until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
         until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_SYSTEM_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
-        echo "Setting logstash_internal password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/logstash_internal/_password -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        #echo "Setting logstash_system password";
+        #until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/logstash_system/_password -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
     networks:
@@ -116,7 +116,7 @@ services:
       - LS_JAVA_OPTS=${LS_JAVA_OPTS}
       - xpack.monitoring.enabled=true
       - xpack.monitoring.elasticsearch.hosts=https://elasticsearch:9200
-      - xpack.monitoring.elasticsearch.username=logstash_internal
+      - xpack.monitoring.elasticsearch.username=logstash_system
       - xpack.monitoring.elasticsearch.password=${LOGSTASH_INTERNAL_PASSWORD}
       - xpack.monitoring.elasticsearch.ssl.certificate_authority=/usr/share/logstash/config/certs/ca/ca.crt
     volumes:
