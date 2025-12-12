@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  # Setup service - runs once to initialize users and passwords
+  setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: elk-setup
+    user: "0"
+    command: >
+      bash -c '
+        echo "Waiting for Elasticsearch availability";
+        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 5; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_SYSTEM_PASSWORD}\"}" | grep -q "^{}"; do sleep 5; done;
+        echo "Setting logstash_internal password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/logstash_internal/_password -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\"}" | grep -q "^{}"; do sleep 5; done;
+        echo "All done!";
+      '
+    volumes:
+      - elasticsearch-certs:/usr/share/elasticsearch/config/certs
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f config/certs/ca/ca.crt ]"]
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  # Elasticsearch service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: elk-elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=${CLUSTER_NAME}
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/elasticsearch/elasticsearch.key
+      - xpack.security.http.ssl.certificate=certs/elasticsearch/elasticsearch.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=certs/elasticsearch/elasticsearch.key
+      - xpack.security.transport.ssl.certificate=certs/elasticsearch/elasticsearch.crt
+      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.license.self_generated.type=basic
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      - elasticsearch-certs:/usr/share/elasticsearch/config/certs
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "${ELASTICSEARCH_PORT}:9200"
+    networks:
+      - elk
+    mem_limit: ${ES_MEM_LIMIT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  # Logstash service
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
+    container_name: elk-logstash
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - LOGSTASH_INTERNAL_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+      - LS_JAVA_OPTS=${LS_JAVA_OPTS}
+      - xpack.monitoring.enabled=true
+      - xpack.monitoring.elasticsearch.hosts=https://elasticsearch:9200
+      - xpack.monitoring.elasticsearch.username=logstash_internal
+      - xpack.monitoring.elasticsearch.password=${LOGSTASH_INTERNAL_PASSWORD}
+      - xpack.monitoring.elasticsearch.ssl.certificate_authority=/usr/share/logstash/config/certs/ca/ca.crt
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logstash/patterns:/usr/share/logstash/patterns:ro
+      - ./logstash/templates:/usr/share/logstash/templates:ro
+      - ./data:/usr/share/logstash/data:ro
+      - elasticsearch-certs:/usr/share/logstash/config/certs:ro
+    ports:
+      - "${LOGSTASH_PORT}:9600"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - setup
+    mem_limit: ${LS_MEM_LIMIT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9600/_node/stats | grep -q '\"status\":\"green\"' || curl -s http://localhost:9600"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  # Kibana service
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: elk-kibana
+    environment:
+      - SERVERNAME=kibana
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - XPACK_SECURITY_ENCRYPTIONKEY=something_at_least_32_characters_long_for_encryption
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=something_at_least_32_characters_long_for_saved_objects
+      - XPACK_REPORTING_ENCRYPTIONKEY=something_at_least_32_characters_long_for_reporting
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - elasticsearch-certs:/usr/share/kibana/config/certs:ro
+      - kibana-data:/usr/share/kibana/data
+    ports:
+      - "${KIBANA_PORT}:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - setup
+    mem_limit: ${KIBANA_MEM_LIMIT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"overall\":{\"level\":\"available\"' || curl -s http://localhost:5601/api/status"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+volumes:
+  elasticsearch-data:
+    driver: local
+  elasticsearch-certs:
+    driver: local
+  kibana-data:
+    driver: local
+
+networks:
+  elk:
+    driver: bridge

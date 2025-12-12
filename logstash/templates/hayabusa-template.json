@@ -1,0 +1,144 @@
+{
+  "index_patterns": ["hayabusa-*"],
+  "priority": 500,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.refresh_interval": "5s",
+      "index.codec": "best_compression"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "Timestamp": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss.SSS XXX||yyyy-MM-dd HH:mm:ss.SSS||ISO8601"
+        },
+        "Computer": {
+          "type": "keyword"
+        },
+        "computer_name": {
+          "type": "keyword"
+        },
+        "Channel": {
+          "type": "keyword"
+        },
+        "EventID": {
+          "type": "keyword"
+        },
+        "Level": {
+          "type": "keyword"
+        },
+        "RecordID": {
+          "type": "long"
+        },
+        "RuleTitle": {
+          "type": "keyword"
+        },
+        "Details": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 512
+            }
+          }
+        },
+        "event_description": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 512
+            }
+          }
+        },
+        "ExtraFieldInfo": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 512
+            }
+          }
+        },
+        "extra_info": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 512
+            }
+          }
+        },
+        "RuleFile": {
+          "type": "keyword"
+        },
+        "EvtxFile": {
+          "type": "keyword"
+        },
+        "RuleID": {
+          "type": "keyword"
+        },
+        "MitreTactics": {
+          "type": "keyword"
+        },
+        "MitreTags": {
+          "type": "keyword"
+        },
+        "OtherTags": {
+          "type": "keyword"
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "source_file": {
+          "type": "keyword"
+        },
+        "ingestion_timestamp": {
+          "type": "date"
+        },
+        "enrichment_timestamp": {
+          "type": "date"
+        },
+        "investigation_type": {
+          "type": "keyword"
+        },
+        "tool": {
+          "type": "keyword"
+        },
+        "parse_error_type": {
+          "type": "keyword"
+        },
+        "source_geo": {
+          "properties": {
+            "city_name": { "type": "keyword" },
+            "continent_name": { "type": "keyword" },
+            "country_iso_code": { "type": "keyword" },
+            "country_name": { "type": "keyword" },
+            "location": { "type": "geo_point" },
+            "region_iso_code": { "type": "keyword" },
+            "region_name": { "type": "keyword" }
+          }
+        },
+        "dest_geo": {
+          "properties": {
+            "city_name": { "type": "keyword" },
+            "continent_name": { "type": "keyword" },
+            "country_iso_code": { "type": "keyword" },
+            "country_name": { "type": "keyword" },
+            "location": { "type": "geo_point" },
+            "region_iso_code": { "type": "keyword" },
+            "region_name": { "type": "keyword" }
+          }
+        }
+      }
+    }
+  }
+}

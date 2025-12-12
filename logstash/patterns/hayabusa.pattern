@@ -1,0 +1,52 @@
+# Custom Grok patterns for Hayabusa logs
+# These patterns can be used in Logstash filters if needed
+
+# Hayabusa timestamp format: 2024-12-11 15:30:45.123 +00:00
+HAYABUSA_TIMESTAMP %{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{TIME} [+-]%{HOUR}:%{MINUTE}
+
+# Windows Event ID (numeric)
+WINDOWS_EVENT_ID %{NUMBER}
+
+# Hayabusa severity levels
+HAYABUSA_LEVEL (critical|high|medium|low|info|informational)
+
+# Computer name (NetBIOS or FQDN)
+COMPUTER_NAME [A-Za-z0-9\-\.]+
+
+# Windows channel names
+WINDOWS_CHANNEL [A-Za-z0-9\-\/]+
+
+# MITRE ATT&CK tactic format
+MITRE_TACTIC [A-Z][A-Za-z0-9\-\s]+
+
+# MITRE ATT&CK technique ID format (T followed by 4 digits, optionally with .3 digits)
+MITRE_TECHNIQUE T\d{4}(\.?\d{3})?
+
+# Process GUID format from Sysmon/Windows logs
+PROCESS_GUID \{[0-9A-Fa-f\-]+\}
+
+# File path patterns (Windows)
+WINDOWS_PATH ([A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*)
+WINDOWS_FILENAME [^\\/:*?"<>|\r\n]+
+
+# Registry path
+REGISTRY_PATH (HKEY_[A-Z_]+|HKLM|HKCU|HKU|HKCR|HKCC)\\[^\r\n]*
+
+# IPv4 and IPv6 for network events
+IPV4_ADDR %{IPV4}
+IPV6_ADDR %{IPV6}
+
+# Port number
+PORT_NUMBER %{INT}
+
+# User account (domain\username or username@domain)
+USER_ACCOUNT ([A-Za-z0-9\-\.]+\\[A-Za-z0-9\-\.]+|[A-Za-z0-9\-\.]+@[A-Za-z0-9\-\.]+|[A-Za-z0-9\-\.]+)
+
+# Command line (anything up to end of line)
+COMMAND_LINE .*
+
+# Hash values (MD5, SHA1, SHA256)
+MD5_HASH [A-Fa-f0-9]{32}
+SHA1_HASH [A-Fa-f0-9]{40}
+SHA256_HASH [A-Fa-f0-9]{64}
+HASH_VALUE (%{MD5_HASH}|%{SHA1_HASH}|%{SHA256_HASH})

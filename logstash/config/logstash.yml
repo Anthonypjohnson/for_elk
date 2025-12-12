@@ -1,0 +1,33 @@
+---
+# Pipeline configuration
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+# Path configuration
+path.config: /usr/share/logstash/pipeline
+path.data: /usr/share/logstash/data
+path.logs: /usr/share/logstash/logs
+
+# Monitoring
+xpack.monitoring.enabled: true
+xpack.monitoring.elasticsearch.hosts: ["https://elasticsearch:9200"]
+xpack.monitoring.elasticsearch.username: "logstash_internal"
+xpack.monitoring.elasticsearch.password: "${LOGSTASH_INTERNAL_PASSWORD}"
+xpack.monitoring.elasticsearch.ssl.certificate_authority: /usr/share/logstash/config/certs/ca/ca.crt
+xpack.monitoring.elasticsearch.ssl.verification_mode: certificate
+
+# API settings
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+
+# Logging
+log.level: info
+log.format: plain
+
+# Pipeline reloading
+config.reload.automatic: true
+config.reload.interval: 3s
+
+# Queue configuration
+queue.type: memory

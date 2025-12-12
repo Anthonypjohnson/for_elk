@@ -1,0 +1,26 @@
+---
+# Server configuration
+server.name: kibana
+server.host: "0.0.0.0"
+server.port: 5601
+
+# Elasticsearch connection
+elasticsearch.hosts: ["https://elasticsearch:9200"]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}"
+
+# SSL configuration for Elasticsearch connection
+elasticsearch.ssl.certificateAuthorities: ["config/certs/ca/ca.crt"]
+elasticsearch.ssl.verificationMode: certificate
+
+# Monitoring
+monitoring.ui.container.elasticsearch.enabled: true
+
+# Encryption keys for saved objects
+# These should be changed to random strings in production
+xpack.security.encryptionKey: "something_at_least_32_characters_long_for_encryption"
+xpack.encryptedSavedObjects.encryptionKey: "something_at_least_32_characters_long_for_saved_objects"
+xpack.reporting.encryptionKey: "something_at_least_32_characters_long_for_reporting"
+
+# Logging
+logging.root.level: info

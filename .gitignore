@@ -1,0 +1,29 @@
+# Environment variables (contains passwords)
+.env
+
+# Data directories
+data/
+
+# Logs
+*.log
+logs/
+
+# Elasticsearch data
+elasticsearch/data/
+
+# Logstash data
+logstash/data/
+
+# Kibana data
+kibana/data/
+
+# macOS
+.DS_Store
+
+# Docker
+.docker/
+
+# Temporary files
+*.tmp
+*.swp
+*~
